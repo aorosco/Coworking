@@ -1,26 +1,18 @@
 # Dockerfile para backend (Node.js + Express)
 FROM node:18-alpine
 
-# Install wget for healthcheck
-RUN apk add --no-cache wget
+# Instalar netcat para el script de espera
+RUN apk add --no-cache netcat-openbsd
 
 WORKDIR /app
 
-# Add permissions for node user
-RUN chown -R node:node /app
+COPY package*.json ./
 
-# Switch to node user
-USER node
-
-# Copy package files
-COPY --chown=node:node package*.json ./
-
-# Install dependencies
 RUN npm install
 
-# Copy source files
-COPY --chown=node:node . .
+COPY . .
+RUN chmod +x init-db.sh
 
-EXPOSE 3001
+EXPOSE 5000
 
-CMD ["npm", "run", "dev"] 
+CMD ["./init-db.sh"] 

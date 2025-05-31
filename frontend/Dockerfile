@@ -1,29 +1,27 @@
 # Dockerfile para frontend (React)
-FROM node:18-slim
+FROM node:18.17.1-alpine3.18
 
-# Install wget and other dependencies
-RUN apt-get update && apt-get install -y wget python3 make g++ \
-    && rm -rf /var/lib/apt/lists/*
+# Configurar npm para usar un registro más confiable
+RUN npm config set registry https://registry.npmjs.org/
 
 WORKDIR /app
 
-# Add permissions for node user
-RUN chown -R node:node /app
+# Copiar los archivos de dependencias
+COPY package*.json ./
 
-# Switch to node user
-USER node
+# Instalar dependencias con configuración adicional
+RUN npm install --legacy-peer-deps
 
-# Copy package files
-COPY --chown=node:node package*.json ./
+# Copiar el resto de los archivos
+COPY . .
 
-# Install dependencies with specific platform
-RUN npm install --platform=linux --arch=x64
-
-# Copy source files
-COPY --chown=node:node . .
-
+# Exponer el puerto
 EXPOSE 3000
 
-ENV VITE_API_URL=http://localhost:5000
+ENV VITE_API_URL=http://localhost:5000/api/v1
 
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"] 
+# Agregar healthcheck
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD wget --quiet --tries=1 --spider http://localhost:3000 || exit 1
+
+CMD ["npm", "run", "dev"] 
